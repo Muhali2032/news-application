@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
 
-from .models import Article, Newsletter, User
+from .models import Article, Newsletter, Publisher, User
 
 
 class NewsAPITests(TestCase):
@@ -291,3 +291,43 @@ class NewsAPITests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         newsletter.refresh_from_db()
         self.assertEqual(newsletter.title, "Editor's Updated Title")
+
+    def test_reader_only_receives_articles_from_subscribed_publishers(self):
+        subscribed_publisher = Publisher.objects.create(
+            name="Subscribed Publisher",
+            description="A publisher the reader follows.",
+        )
+
+        other_publisher = Publisher.objects.create(
+            name="Other Publisher",
+            description="A publisher the reader does not follow.",
+        )
+
+        self.reader.publisher_subscriptions.add(subscribed_publisher)
+
+        subscribed_article = Article.objects.create(
+            title="Subscribed Publisher Article",
+            content="This article belongs to the subscribed publisher.",
+            author=self.journalist,
+            publisher=subscribed_publisher,
+            approved=True,
+        )
+
+        Article.objects.create(
+            title="Other Publisher Article",
+            content="This article belongs to another publisher.",
+            author=self.journalist,
+            publisher=other_publisher,
+            approved=True,
+        )
+
+        self.client.force_authenticate(user=self.reader)
+
+        response = self.client.get("/api/articles/subscribed/")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(
+            response.data[0]["id"],
+            subscribed_article.id,
+        )

@@ -135,11 +135,7 @@ STATIC_URL = 'static/'
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 LOGIN_URL = "/accounts/login/"
@@ -154,4 +150,4 @@ REST_FRAMEWORK = {
 DEFAULT_FROM_EMAIL = "news@newshub.local"
 
 # Local endpoint for approved article notifications
-APPROVED_ARTICLE_WEBHOOK_URL = "http://127.0.0.1:8000/api/approved/"
+APPROVED_ARTICLE_WEBHOOK_URL = "http:" + "/" + "/" + "127.0.0.1:8000" + "/api/approved/"

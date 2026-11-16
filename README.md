@@ -24,8 +24,8 @@ The project uses Django, Django REST Framework and MariaDB.
 - Support for independent journalists and publisher-associated articles.
 - Publisher and journalist subscription relationships.
 - Newsletter creation and management.
-- Email notification processing for readers subscribed to an article's journalist or publisher.
-- Webhook integration when an article is approved.
+- Email notification processing for readers subscribed to an article's journalist or publisher, using Django's console email backend for development.
+- Local API webhook integration that receives a request when an article is approved.
 - REST API with token authentication.
 - Automated tests for important application workflows.
 
@@ -118,10 +118,26 @@ Install project dependencies:
 ```bash
 pip install -r requirements.txt
 ```
+Create a `.env` file in the project root with the following environment variables:
 
-Configure the required environment variables in a local `.env` file. Do not commit this file or share its credentials.
+- `DJANGO_SECRET_KEY`: A securely generated Django secret key.
 
-The database settings must match the MariaDB database configuration.
+Generate a new key using:
+
+```bash
+python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+```
+
+- `DB_PASSWORD`: The password for the MariaDB database user.
+
+The application is configured to connect to MariaDB using:
+
+- Database name: `news_application`
+- Database user: `news_user`
+- Host: `127.0.0.1`
+- Port: `3307`
+
+Ensure MariaDB is running and the database and user have been created before applying migrations. The `.env` file contains sensitive information and must never be committed to GitHub.
 
 Apply database migrations:
 
@@ -150,10 +166,10 @@ Open the application at:
 Run the application tests using:
 
 ```bash
-python manage.py test news -v 2
+python manage.py test
 ```
 
-The tests cover role-based access, article creation and approval, subscriptions, newsletter operations and notification integration.
+The automated tests cover role-based access, article creation and approval, subscriptions, newsletter operations, and mocked notification integrations.
 
 ## 9. Security and Configuration
 
@@ -164,4 +180,12 @@ The tests cover role-based access, article creation and approval, subscriptions,
 
 ## 10. Design Documentation
 
-The `docs/` directory is intended to contain the system design diagrams and supporting technical documentation.
+The system design documentation is available in `docs/system_design.md`.
+
+It includes:
+
+- Use-case diagram showing the interactions between Readers, Editors and Journalists.
+- Sequence diagram illustrating the article approval and notification process.
+- Class diagram showing the main models and their relationships.
+
+These diagrams provide an overview of the system structure, user interactions and database relationships.

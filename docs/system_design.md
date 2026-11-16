@@ -34,6 +34,8 @@ flowchart LR
 
     Reader --> ViewArticles
     Reader --> ViewNewsletters
+    Journalist --> ViewNewsletters
+    Editor --> ViewNewsletters
     Reader --> ViewSubscriptions
 
     Journalist --> ViewArticles
@@ -60,8 +62,8 @@ sequenceDiagram
     actor Editor
     participant API as Django API
     participant DB as MariaDB
-    participant Email as Email Service
-    participant Webhook as Approved Article Endpoint
+    participant Email as Django Console Email Backend
+    participant Webhook as Local Approved Article API
 
     Editor->>API: Request article approval
     API->>API: Check editor permissions
