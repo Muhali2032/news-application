@@ -1,0 +1,55 @@
+{% extends "news/base.html" %}
+
+{% block title %}{{ newsletter.title }} | NewsHub{% endblock %}
+
+{% block content %}
+
+<div class="card shadow-sm">
+    <div class="card-body p-4">
+
+        <h1 class="fw-bold">{{ newsletter.title }}</h1>
+
+        <p class="text-muted">
+            Curated by {{ newsletter.author.username }}
+            | {{ newsletter.created_at|date:"d M Y" }}
+        </p>
+
+        <hr>
+
+        <p>{{ newsletter.description|linebreaks }}</p>
+
+        <h3 class="fw-bold mt-4 mb-3">Articles in this Newsletter</h3>
+
+        <div class="list-group">
+
+            {% for article in newsletter.articles.all %}
+                {% if article.approved %}
+                    <a
+                        href="{% url 'article_detail' article.pk %}"
+                        class="list-group-item list-group-item-action"
+                    >
+                        <h5 class="mb-1">{{ article.title }}</h5>
+                        <small class="text-muted">
+                            By {{ article.author.username }}
+                        </small>
+                    </a>
+                {% endif %}
+            {% empty %}
+                <p class="text-muted">
+                    No articles have been added to this newsletter yet.
+                </p>
+            {% endfor %}
+
+        </div>
+
+        <a
+            href="{% url 'newsletter_list' %}"
+            class="btn btn-outline-dark mt-4"
+        >
+            Back to Newsletters
+        </a>
+
+    </div>
+</div>
+
+{% endblock %}

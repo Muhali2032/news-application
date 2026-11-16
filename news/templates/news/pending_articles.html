@@ -1,0 +1,54 @@
+{% extends "news/base.html" %}
+
+{% block title %}Pending Articles | NewsHub{% endblock %}
+
+{% block content %}
+
+<div class="mb-4">
+    <h1 class="fw-bold">Article Review</h1>
+    <p class="text-muted">
+        Review articles submitted by journalists before publication.
+    </p>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+
+        {% for article in articles %}
+            <div class="border-bottom py-3">
+
+                <h5 class="fw-bold">{{ article.title }}</h5>
+
+                <p class="text-muted small">
+                    Submitted by {{ article.author.username }}
+                    | {{ article.created_at|date:"d M Y" }}
+                </p>
+
+                <p>{{ article.content|truncatewords:30 }}</p>
+
+                <a
+                    href="{% url 'article_detail' article.pk %}"
+                    class="btn btn-outline-dark btn-sm"
+                >
+                    View Article
+                </a>
+
+                <a
+                    href="{% url 'article_approve' article.pk %}"
+                    class="btn btn-success btn-sm"
+                >
+                    Review and Approve
+                </a>
+
+            </div>
+
+        {% empty %}
+            <div class="alert alert-info mb-0">
+                There are currently no articles waiting for approval.
+            </div>
+        {% endfor %}
+
+    </div>
+</div>
+
+{% endblock %}

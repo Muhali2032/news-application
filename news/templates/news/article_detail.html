@@ -1,0 +1,35 @@
+{% extends "news/base.html" %}
+
+{% block title %}{{ article.title }} | NewsHub{% endblock %}
+
+{% block content %}
+
+<div class="card shadow-sm">
+    <div class="card-body p-4">
+
+        <h1 class="fw-bold">{{ article.title }}</h1>
+
+        <p class="text-muted">
+            By {{ article.author.username }}
+            {% if article.publisher %}
+                | {{ article.publisher.name }}
+            {% else %}
+                | Independent Journalist
+            {% endif %}
+            | {{ article.created_at|date:"d M Y" }}
+        </p>
+
+        <hr>
+
+        <div class="fs-5">
+            {{ article.content|linebreaks }}
+        </div>
+
+        <a href="{% url 'article_list' %}" class="btn btn-outline-dark mt-3">
+            Back to Articles
+        </a>
+
+    </div>
+</div>
+
+{% endblock %}

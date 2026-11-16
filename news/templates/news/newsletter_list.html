@@ -1,0 +1,58 @@
+{% extends "news/base.html" %}
+
+{% block title %}Newsletters | NewsHub{% endblock %}
+
+{% block content %}
+
+<div class="mb-4">
+    <h1 class="fw-bold">Newsletters</h1>
+    <p class="text-muted">
+        Explore curated collections of articles from our journalists and editors.
+    </p>
+</div>
+
+<div class="row">
+
+    {% for newsletter in newsletters %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+
+                    <h5 class="card-title">
+                        {{ newsletter.title }}
+                    </h5>
+
+                    <p class="text-muted small">
+                        By {{ newsletter.author.username }}
+                    </p>
+
+                    <p>
+                        {{ newsletter.description|truncatewords:25 }}
+                    </p>
+
+                    <a
+                        href="{% url 'newsletter_detail' newsletter.pk %}"
+                        class="btn btn-dark"
+                    >
+                        View Newsletter
+                    </a>
+
+                </div>
+
+                <div class="card-footer text-muted small">
+                    {{ newsletter.created_at|date:"d M Y" }}
+                </div>
+            </div>
+        </div>
+
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-secondary">
+                No newsletters are available yet.
+            </div>
+        </div>
+    {% endfor %}
+
+</div>
+
+{% endblock %}

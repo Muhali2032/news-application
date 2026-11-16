@@ -1,0 +1,40 @@
+{% extends "news/base.html" %}
+
+{% block title %}Newsletter Form | NewsHub{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+
+                <h1 class="fw-bold mb-4">
+                    Create or Update Newsletter
+                </h1>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    {{ form.as_p }}
+
+                    <button type="submit" class="btn btn-dark">
+                        Save Newsletter
+                    </button>
+
+                    <a
+                        href="{% url 'newsletter_list' %}"
+                        class="btn btn-outline-secondary"
+                    >
+                        Cancel
+                    </a>
+                </form>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
