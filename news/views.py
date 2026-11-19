@@ -1,14 +1,42 @@
+from rest_framework.authtoken.models import Token
+from .services import notify_article_approved
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, get_object_or_404, redirect
 
 from .models import Article, Newsletter
-from .forms import ArticleForm, NewsletterForm
+from .forms import ArticleForm, NewsletterForm, UserRegistrationForm
 
 
 def has_role(user, *roles):
     return user.is_authenticated and user.role in roles
+
+def register(request):
+    """Register a new reader account."""
+
+    if request.user.is_authenticated:
+        return redirect("article_list")
+
+    if request.method == "POST":
+        form = UserRegistrationForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                "Registration successful. Please log in."
+            )
+            return redirect("login")
+    else:
+        form = UserRegistrationForm()
+
+    return render(
+    request,
+    "registration/registration.html",
+    {"form": form}
+)
+
 
 
 def article_list(request):
@@ -33,7 +61,7 @@ def article_create(request):
     if not has_role(request.user, "JOURNALIST"):
         raise PermissionDenied
 
-    form = ArticleForm(request.POST or None)
+    form = ArticleForm(request.POST or None, user=request.user)
 
     # Assign the author before Django validates the form.
     form.instance.author = request.user
@@ -65,7 +93,11 @@ def article_update(request, pk):
     if request.user.role == "JOURNALIST" and article.author != request.user:
         raise PermissionDenied
 
-    form = ArticleForm(request.POST or None, instance=article)
+    form = ArticleForm(
+    request.POST or None,
+    instance=article,
+    user=request.user,
+)
 
     if form.is_valid():
         updated_article = form.save(commit=False)
@@ -99,6 +131,7 @@ def article_delete(request, pk):
     })
 
 
+
 @login_required
 def article_approve(request, pk):
     if not has_role(request.user, "EDITOR"):
@@ -106,15 +139,50 @@ def article_approve(request, pk):
 
     article = get_object_or_404(Article, pk=pk)
 
+    if article.approved:
+        messages.info(request, "This article is already approved.")
+        return redirect("article_list")
+
     if request.method == "POST":
         article.approved = True
         article.save(update_fields=["approved"])
-        messages.success(request, "Article approved successfully.")
+
+        # Obtain the editor's API token for the internal webhook.
+        token, created = Token.objects.get_or_create(
+            user=request.user
+        )
+
+        # Send subscriber notifications and call the webhook.
+        results = notify_article_approved(
+            article,
+            token.key,
+        )
+
+        if results["email_error"]:
+            messages.warning(
+                request,
+                "The article was approved, but email notification failed."
+            )
+
+        if results["webhook_error"]:
+            messages.warning(
+                request,
+                "The article was approved, but the internal webhook failed."
+            )
+
+        if not results["email_error"] and not results["webhook_error"]:
+            messages.success(
+                request,
+                "Article approved and notifications processed successfully."
+            )
+
         return redirect("article_list")
 
-    return render(request, "news/article_approve.html", {
-        "article": article
-    })
+    return render(
+        request,
+        "news/article_approve.html",
+        {"article": article}
+    )
 
 
 def newsletter_list(request):
@@ -168,6 +236,32 @@ def newsletter_update(request, pk):
     return render(request, "news/newsletter_form.html", {
         "form": form
     })
+@login_required
+def newsletter_delete(request, pk):
+    newsletter = get_object_or_404(Newsletter, pk=pk)
+
+    if not has_role(request.user, "JOURNALIST", "EDITOR"):
+        raise PermissionDenied
+
+    if (
+        request.user.role == "JOURNALIST"
+        and newsletter.author != request.user
+    ):
+        raise PermissionDenied
+
+    if request.method == "POST":
+        newsletter.delete()
+        messages.success(
+            request,
+            "Newsletter deleted successfully."
+        )
+        return redirect("newsletter_list")
+
+    return render(
+        request,
+        "news/newsletter_confirm_delete.html",
+        {"newsletter": newsletter},
+    )
 
 
 def newsletter_detail(request, pk):

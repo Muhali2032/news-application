@@ -61,6 +61,27 @@ class ArticleSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "author", "created_at", "approved"]
 
+    def validate_publisher(self, publisher):
+        """
+        Ensure journalists only use publishers they are
+        associated with.
+        """
+        request = self.context.get("request")
+
+        if (
+            request
+            and request.user.role == User.Role.JOURNALIST
+            and publisher is not None
+            and not publisher.journalists.filter(
+                pk=request.user.pk
+            ).exists()
+        ):
+            raise serializers.ValidationError(
+                "You can only select publishers you are associated with."
+            )
+
+        return publisher
+
 
 class NewsletterSerializer(serializers.ModelSerializer):
     """Serializer for creating and displaying newsletters."""

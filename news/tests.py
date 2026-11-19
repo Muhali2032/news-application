@@ -1,6 +1,7 @@
 from unittest.mock import Mock, patch
 
 from django.test import TestCase
+from django.urls import reverse
 from rest_framework import status
 from rest_framework.authtoken.models import Token
 from rest_framework.test import APIClient
@@ -136,8 +137,9 @@ class NewsAPITests(TestCase):
             status.HTTP_404_NOT_FOUND,
         )
 
-    @patch("news.api_views.requests.post")
-    @patch("news.api_views.send_mail")
+    @patch("news.services.requests.post")
+    @patch("news.services.send_mail")
+
     def test_editor_approval_sends_notifications(
         self,
         mock_send_mail,
@@ -174,6 +176,46 @@ class NewsAPITests(TestCase):
         )
 
         mock_requests_post.assert_called_once()
+
+    @patch("news.services.requests.post")
+    @patch("news.services.send_mail")
+    def test_website_editor_approval_sends_notifications(
+        self,
+        mock_send_mail,
+        mock_requests_post,
+    ):
+        self.reader.journalist_subscriptions.add(self.journalist)
+
+        self.assertTrue(
+            self.client.login(
+                username="test_editor",
+                password="TestPassword123",
+            )
+        )
+
+        mock_send_mail.return_value = 1
+
+        mock_webhook_response = Mock()
+        mock_webhook_response.raise_for_status.return_value = None
+        mock_requests_post.return_value = mock_webhook_response
+
+        response = self.client.post(
+            f"/articles/{self.pending_article.id}/approve/"
+        )
+
+        self.assertEqual(response.status_code, 302)
+
+        self.pending_article.refresh_from_db()
+        self.assertTrue(self.pending_article.approved)
+
+        mock_send_mail.assert_called_once()
+        self.assertIn(
+            "reader@example.com",
+            mock_send_mail.call_args.kwargs["recipient_list"],
+        )
+
+        mock_requests_post.assert_called_once()
+
 
     def test_webhook_rejects_unapproved_article(self):
         self.client.force_authenticate(user=self.editor)
@@ -292,6 +334,60 @@ class NewsAPITests(TestCase):
         newsletter.refresh_from_db()
         self.assertEqual(newsletter.title, "Editor's Updated Title")
 
+    def test_journalist_can_use_associated_publisher(self):
+        publisher = Publisher.objects.create(
+            name="Associated Publisher",
+            description="A publisher associated with the journalist.",
+        )
+        publisher.journalists.add(self.journalist)
+
+        self.client.force_authenticate(user=self.journalist)
+
+        response = self.client.post(
+            "/api/articles/",
+            {
+                "title": "Publisher Article",
+                "content": "An article for an associated publisher.",
+                "publisher": publisher.id,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_201_CREATED,
+        )
+        self.assertEqual(response.data["publisher"], publisher.id)
+
+    def test_journalist_cannot_use_unassociated_publisher(self):
+        publisher = Publisher.objects.create(
+            name="Unassociated Publisher",
+            description="A publisher not associated with the journalist.",
+        )
+
+        self.client.force_authenticate(user=self.journalist)
+
+        response = self.client.post(
+            "/api/articles/",
+            {
+                "title": "Unauthorised Publisher Article",
+                "content": "This article should be rejected.",
+                "publisher": publisher.id,
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+        self.assertEqual(
+            Article.objects.filter(
+                title="Unauthorised Publisher Article"
+            ).count(),
+            0,
+        )
+
     def test_reader_only_receives_articles_from_subscribed_publishers(self):
         subscribed_publisher = Publisher.objects.create(
             name="Subscribed Publisher",
@@ -330,4 +426,127 @@ class NewsAPITests(TestCase):
         self.assertEqual(
             response.data[0]["id"],
             subscribed_article.id,
+        )
+class NewsletterWebsiteDeletionTests(TestCase):
+    """Test website newsletter deletion permissions."""
+
+    def setUp(self):
+        self.reader = User.objects.create_user(
+            username="website_reader",
+            password="TestPassword123",
+            role=User.Role.READER,
+        )
+
+        self.journalist = User.objects.create_user(
+            username="website_journalist",
+            password="TestPassword123",
+            role=User.Role.JOURNALIST,
+        )
+
+        self.other_journalist = User.objects.create_user(
+            username="other_website_journalist",
+            password="TestPassword123",
+            role=User.Role.JOURNALIST,
+        )
+
+        self.editor = User.objects.create_user(
+            username="website_editor",
+            password="TestPassword123",
+            role=User.Role.EDITOR,
+        )
+
+        self.newsletter = Newsletter.objects.create(
+            title="Test Newsletter",
+            description="Newsletter deletion test.",
+            author=self.journalist,
+        )
+
+        self.delete_url = reverse(
+            "newsletter_delete",
+            args=[self.newsletter.pk],
+        )
+
+    def test_journalist_can_delete_own_newsletter(self):
+        self.client.login(
+            username="website_journalist",
+            password="TestPassword123",
+        )
+
+        response = self.client.post(self.delete_url)
+
+        self.assertRedirects(
+            response,
+            reverse("newsletter_list"),
+        )
+        self.assertFalse(
+            Newsletter.objects.filter(
+                pk=self.newsletter.pk
+            ).exists()
+        )
+
+    def test_journalist_cannot_delete_another_journalists_newsletter(self):
+        self.client.login(
+            username="other_website_journalist",
+            password="TestPassword123",
+        )
+
+        response = self.client.post(self.delete_url)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(
+            Newsletter.objects.filter(
+                pk=self.newsletter.pk
+            ).exists()
+        )
+
+    def test_editor_can_delete_another_journalists_newsletter(self):
+        self.client.login(
+            username="website_editor",
+            password="TestPassword123",
+        )
+
+        response = self.client.post(self.delete_url)
+
+        self.assertRedirects(
+            response,
+            reverse("newsletter_list"),
+        )
+        self.assertFalse(
+            Newsletter.objects.filter(
+                pk=self.newsletter.pk
+            ).exists()
+        )
+
+    def test_reader_cannot_delete_newsletter(self):
+        self.client.login(
+            username="website_reader",
+            password="TestPassword123",
+        )
+
+        response = self.client.post(self.delete_url)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(
+            Newsletter.objects.filter(
+                pk=self.newsletter.pk
+            ).exists()
+        )
+
+    def test_get_request_displays_confirmation_without_deleting(self):
+        self.client.login(
+            username="website_journalist",
+            password="TestPassword123",
+        )
+
+        response = self.client.get(self.delete_url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(
+            response,
+            "news/newsletter_confirm_delete.html",
+        )
+        self.assertTrue(
+            Newsletter.objects.filter(
+                pk=self.newsletter.pk
+            ).exists()
         )

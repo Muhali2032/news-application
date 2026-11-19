@@ -4,6 +4,7 @@ from . import views
 
 
 urlpatterns = [
+    path("register/", views.register, name="register"),
     path("", views.article_list, name="article_list"),
     path(
         "articles/pending/",
@@ -54,5 +55,10 @@ urlpatterns = [
         "newsletters/<int:pk>/edit/",
         views.newsletter_update,
         name="newsletter_update",
+    ),
+    path(
+    "newsletters/<int:pk>/delete/",
+    views.newsletter_delete,
+    name="newsletter_delete",
     ),
 ]
