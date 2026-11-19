@@ -53,7 +53,52 @@ class NewsAPITests(TestCase):
             author=self.journalist,
             approved=False,
         )
+    def test_user_can_obtain_api_token(self):
+        response = self.client.post(
+            "/api/token/",
+            {
+                "username": "test_reader",
+                "password": "TestPassword123",
+            },
+            format="json",
+        )
 
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertIn("token", response.data)
+
+    def test_invalid_credentials_cannot_obtain_api_token(self):
+        response = self.client.post(
+            "/api/token/",
+            {
+                "username": "test_reader",
+                "password": "WrongPassword123",
+            },
+            format="json",
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_400_BAD_REQUEST,
+        )
+
+    def test_reader_can_retrieve_approved_article(self):
+        self.client.force_authenticate(user=self.reader)
+
+        response = self.client.get(
+            f"/api/articles/{self.approved_article.id}/"
+        )
+
+        self.assertEqual(
+            response.status_code,
+            status.HTTP_200_OK,
+        )
+        self.assertEqual(
+            response.data["id"],
+            self.approved_article.id,
+        )
     def test_reader_only_sees_approved_articles(self):
         self.client.force_authenticate(user=self.reader)
 
