@@ -1,4 +1,3 @@
-
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
@@ -7,7 +6,7 @@ from .models import User, Publisher, Article, Newsletter
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    """Admin configuration for Readers, Editors and Journalists."""
+    """Configure administration for readers, editors and journalists."""
 
     list_display = (
         "username",
@@ -16,9 +15,7 @@ class CustomUserAdmin(UserAdmin):
         "is_staff",
         "is_active",
     )
-
     list_filter = ("role", "is_staff", "is_active")
-
     fieldsets = UserAdmin.fieldsets + (
         ("News Application Details", {
             "fields": (
@@ -28,13 +25,11 @@ class CustomUserAdmin(UserAdmin):
             )
         }),
     )
-
     add_fieldsets = UserAdmin.add_fieldsets + (
         ("News Application Details", {
             "fields": ("role",)
         }),
     )
-
     filter_horizontal = (
         "groups",
         "user_permissions",
@@ -45,6 +40,8 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(Publisher)
 class PublisherAdmin(admin.ModelAdmin):
+    """Configure the administration of publishers."""
+
     list_display = ("name",)
     search_fields = ("name",)
     filter_horizontal = ("editors", "journalists")
@@ -52,6 +49,8 @@ class PublisherAdmin(admin.ModelAdmin):
 
 @admin.register(Article)
 class ArticleAdmin(admin.ModelAdmin):
+    """Configure the administration of news articles."""
+
     list_display = (
         "title",
         "author",
@@ -59,14 +58,14 @@ class ArticleAdmin(admin.ModelAdmin):
         "approved",
         "created_at",
     )
-
     list_filter = ("approved", "publisher", "created_at")
     search_fields = ("title", "content", "author__username")
 
 
 @admin.register(Newsletter)
 class NewsletterAdmin(admin.ModelAdmin):
+    """Configure the administration of newsletters."""
+
     list_display = ("title", "author", "created_at")
     search_fields = ("title", "description", "author__username")
     filter_horizontal = ("articles",)
-

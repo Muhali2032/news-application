@@ -98,68 +98,146 @@ API access is controlled through token authentication and role-based permissions
 
 ### Requirements
 
-- Python
+- Python 3
 - Django
 - Django REST Framework
-- MariaDB
-- Docker Desktop (if using the provided MariaDB container configuration)
+- MySQL or MariaDB
+- Git
+- A running MySQL or MariaDB server
 
-### Installation
+### Step 1: Clone the Repository
 
-Create and activate a virtual environment:
+Open a terminal and clone the GitHub repository:
+
+```bash
+git clone https://github.com/Muhali2032/news-application.git
+```
+
+Enter the project directory:
+
+```bash
+cd news-application
+```
+
+### Step 2: Create and Activate a Virtual Environment
+
+Create a virtual environment inside the project directory:
 
 ```bash
 python3 -m venv .venv
+```
+
+Activate it:
+
+```bash
 source .venv/bin/activate
 ```
 
-Install project dependencies:
+### Step 3: Install Project Dependencies
+
+Upgrade pip and install the required packages:
 
 ```bash
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
-Create a `.env` file in the project root with the following environment variables:
+
+### Step 4: Configure Environment Variables
+
+Create your local environment file by copying the example file:
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and replace the example values with your own credentials:
 
 - `DJANGO_SECRET_KEY`: A securely generated Django secret key.
+- `DB_PASSWORD`: The password you choose for the `news_user` database account.
 
-Generate a new key using:
+Generate a Django secret key using:
 
 ```bash
 python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
 ```
 
-- `DB_PASSWORD`: The password for the MariaDB database user.
+Copy the generated key into the `DJANGO_SECRET_KEY` value in `.env`.
 
-The application is configured to connect to MariaDB using:
+Do not commit `.env` to GitHub because it contains sensitive information. The `.env.example` file is provided as a template and should be included in the repository.
+
+### Step 5: Create the Database and Database User
+
+Make sure your MySQL or MariaDB server is running.
+
+Log in to the database as the administrator:
+
+```bash
+mysql -u root -p
+```
+
+Enter your MySQL or MariaDB root password when prompted.
+
+For a fresh installation, run the following SQL commands to create the application database and user. If the database or user already exists, do not recreate it; verify the existing configuration and permissions instead.
+
+```sql
+CREATE DATABASE news_application
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+
+CREATE USER 'news_user'@'127.0.0.1'
+IDENTIFIED BY 'your_database_password';
+
+GRANT ALL PRIVILEGES ON news_application.*
+TO 'news_user'@'127.0.0.1';
+
+FLUSH PRIVILEGES;
+```
+
+Replace `your_database_password` with the password you selected for the database user. Use that same password as the `DB_PASSWORD` value in your `.env` file.
+
+The database settings in `news_project/settings.py` are configured as follows:
 
 - Database name: `news_application`
 - Database user: `news_user`
 - Host: `127.0.0.1`
-- Port: `3307`
+- Port: `3306`
 
-Ensure MariaDB is running and the database and user have been created before applying migrations. The `.env` file contains sensitive information and must never be committed to GitHub.
+If you use a different database name or username, update the corresponding settings in `news_project/settings.py` to match.
 
-Apply database migrations:
+Exit the database console:
+
+```sql
+EXIT;
+```
+
+### Step 6: Apply Database Migrations
+
+Create the database tables by running:
 
 ```bash
 python manage.py migrate
 ```
 
-Run system checks:
+### Step 7: Run Django System Checks
+
+Check that the project configuration is valid:
 
 ```bash
 python manage.py check
 ```
 
-Start the development server:
+### Step 8: Start the Development Server
+
+Run the application:
 
 ```bash
 python manage.py runserver
 ```
 
-Open the application at:
+Open the application in your browser:
 
-`http://127.0.0.1:8000/`
+http://127.0.0.1:8000/
+
 
 ## 8. Running Automated Tests
 

@@ -87,7 +87,7 @@ DATABASES = {
         'USER': 'news_user',
         'PASSWORD': os.environ["DB_PASSWORD"],
         'HOST': '127.0.0.1',
-        'PORT': '3307',
+        'PORT': '3306',
         'OPTIONS': {
             'charset': 'utf8mb4',
         },

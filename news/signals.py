@@ -54,7 +54,9 @@ def create_role_groups(sender, **kwargs):
 
 
 @receiver(post_save, sender=User)
-def assign_role_group(sender, instance, **kwargs):
+def assign_role_group(sender, instance, raw=False, **kwargs):
+    if raw:
+        return
     group_name = ROLE_GROUPS.get(instance.role)
 
     if not group_name:
