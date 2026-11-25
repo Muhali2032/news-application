@@ -55,6 +55,42 @@ class NewsAPITests(TestCase):
             author=self.journalist,
             approved=False,
         )
+
+    def test_unauthenticated_users_cannot_access_protected_api_endpoints(self):
+        """Verify that protected API endpoints reject unauthenticated users."""
+
+        get_endpoints = [
+            "/api/articles/",
+            "/api/articles/subscribed/",
+            f"/api/articles/{self.approved_article.id}/",
+            "/api/newsletters/",
+        ]
+
+        for endpoint in get_endpoints:
+            with self.subTest(endpoint=endpoint):
+                response = self.client.get(endpoint)
+
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_401_UNAUTHORIZED,
+                )
+
+        post_endpoints = [
+            "/api/articles/",
+            "/api/newsletters/",
+            f"/api/articles/{self.pending_article.id}/approve/",
+            "/api/approved/",
+        ]
+
+        for endpoint in post_endpoints:
+            with self.subTest(endpoint=endpoint):
+                response = self.client.post(endpoint, {}, format="json")
+
+                self.assertEqual(
+                    response.status_code,
+                    status.HTTP_401_UNAUTHORIZED,
+                )
+
     def test_user_can_obtain_api_token(self):
         """Verify that a user can obtain an API authentication token."""
         response = self.client.post(
