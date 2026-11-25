@@ -1,3 +1,4 @@
+"""Manage user role groups and permissions through Django signals."""
 from django.db.models.signals import post_migrate, post_save
 from django.dispatch import receiver
 from django.contrib.auth.models import Group, Permission
@@ -15,6 +16,7 @@ ROLE_GROUPS = {
 
 @receiver(post_migrate)
 def create_role_groups(sender, **kwargs):
+    """Create role groups and assign their model permissions."""
     if sender.name != "news":
         return
 
@@ -55,6 +57,7 @@ def create_role_groups(sender, **kwargs):
 
 @receiver(post_save, sender=User)
 def assign_role_group(sender, instance, raw=False, **kwargs):
+    """Assign each saved user to the group matching their role."""
     if raw:
         return
     group_name = ROLE_GROUPS.get(instance.role)

@@ -1,4 +1,4 @@
-
+"""Define serializers for news application API data."""
 from rest_framework import serializers
 
 from .models import Article, Newsletter, Publisher, User
@@ -8,6 +8,7 @@ class UserSerializer(serializers.ModelSerializer):
     """Serializer for displaying user information."""
 
     class Meta:
+        """Define the user fields exposed by the API."""
         model = User
         fields = [
             "id",
@@ -23,6 +24,7 @@ class PublisherSerializer(serializers.ModelSerializer):
     """Serializer for displaying publisher information."""
 
     class Meta:
+        """Define the publisher fields exposed by the API."""
         model = Publisher
         fields = [
             "id",
@@ -49,6 +51,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     created_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
+        """Define the article fields and read-only API fields."""
         model = Article
         fields = [
             "id",
@@ -97,6 +100,7 @@ class NewsletterSerializer(serializers.ModelSerializer):
     created_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
+        """Define the newsletter fields and read-only API fields."""
         model = Newsletter
         fields = [
             "id",
@@ -109,6 +113,7 @@ class NewsletterSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "author", "created_at"]
 
     def validate(self, data):
+        """Ensure only journalists and editors can create newsletters."""
         request = self.context.get("request")
 
         if request and request.user.role not in [

@@ -1,3 +1,4 @@
+"""Provide website views for news articles and newsletters."""
 from rest_framework.authtoken.models import Token
 from .services import notify_article_approved
 from django.contrib import messages
@@ -10,6 +11,7 @@ from .forms import ArticleForm, NewsletterForm, UserRegistrationForm
 
 
 def has_role(user, *roles):
+    """Check whether an authenticated user has one of the specified roles."""
     return user.is_authenticated and user.role in roles
 
 def register(request):
@@ -40,6 +42,7 @@ def register(request):
 
 
 def article_list(request):
+    """Display approved articles in newest-first order."""
     articles = Article.objects.filter(approved=True).order_by(
         "-created_at"
     )
@@ -49,6 +52,7 @@ def article_list(request):
 
 
 def article_detail(request, pk):
+    """Display the details of an approved article."""
     article = get_object_or_404(
         Article.objects.filter(approved=True), pk=pk
     )
@@ -58,6 +62,7 @@ def article_detail(request, pk):
 
 @login_required
 def article_create(request):
+    """Allow journalists to create and submit articles for approval."""
     if not has_role(request.user, "JOURNALIST"):
         raise PermissionDenied
 
@@ -85,6 +90,7 @@ def article_create(request):
 
 @login_required
 def article_update(request, pk):
+    """Allow authorised users to update an article."""
     article = get_object_or_404(Article, pk=pk)
 
     if not has_role(request.user, "JOURNALIST", "EDITOR"):
@@ -113,6 +119,7 @@ def article_update(request, pk):
 
 @login_required
 def article_delete(request, pk):
+    """Allow authorised users to delete an article."""
     article = get_object_or_404(Article, pk=pk)
 
     if not has_role(request.user, "JOURNALIST", "EDITOR"):
@@ -134,6 +141,7 @@ def article_delete(request, pk):
 
 @login_required
 def article_approve(request, pk):
+    """Allow editors to approve articles and process notifications."""
     if not has_role(request.user, "EDITOR"):
         raise PermissionDenied
 
@@ -186,6 +194,7 @@ def article_approve(request, pk):
 
 
 def newsletter_list(request):
+    """Display newsletters in newest-first order."""
     newsletters = Newsletter.objects.all().order_by("-created_at")
     return render(request, "news/newsletter_list.html", {
         "newsletters": newsletters
@@ -194,6 +203,7 @@ def newsletter_list(request):
 
 @login_required
 def newsletter_create(request):
+    """Allow journalists and editors to create newsletters."""
     if not has_role(request.user, "JOURNALIST", "EDITOR"):
         raise PermissionDenied
 
@@ -215,6 +225,7 @@ def newsletter_create(request):
 
 @login_required
 def newsletter_update(request, pk):
+    """Allow authorised users to update newsletters."""
     newsletter = get_object_or_404(Newsletter, pk=pk)
 
     if not has_role(request.user, "JOURNALIST", "EDITOR"):
@@ -238,6 +249,7 @@ def newsletter_update(request, pk):
     })
 @login_required
 def newsletter_delete(request, pk):
+    """Allow authorised users to delete newsletters."""
     newsletter = get_object_or_404(Newsletter, pk=pk)
 
     if not has_role(request.user, "JOURNALIST", "EDITOR"):
@@ -265,12 +277,14 @@ def newsletter_delete(request, pk):
 
 
 def newsletter_detail(request, pk):
+    """Display the details of a newsletter."""
     newsletter = get_object_or_404(Newsletter, pk=pk)
     return render(request, "news/newsletter_detail.html", {
         "newsletter": newsletter
     })
 @login_required
 def pending_articles(request):
+    """Display pending articles to authorised editors."""
     if not has_role(request.user, "EDITOR"):
         raise PermissionDenied
 

@@ -1,3 +1,4 @@
+"""Test news application API access, permissions and notifications."""
 from unittest.mock import Mock, patch
 
 from django.test import TestCase
@@ -13,6 +14,7 @@ class NewsAPITests(TestCase):
     """Test article access, role permissions and approval notifications."""
 
     def setUp(self):
+        """Create test users and articles for API tests."""
         self.client = APIClient()
 
         self.reader = User.objects.create_user(
@@ -54,6 +56,7 @@ class NewsAPITests(TestCase):
             approved=False,
         )
     def test_user_can_obtain_api_token(self):
+        """Verify that a user can obtain an API authentication token."""
         response = self.client.post(
             "/api/token/",
             {
@@ -70,6 +73,7 @@ class NewsAPITests(TestCase):
         self.assertIn("token", response.data)
 
     def test_invalid_credentials_cannot_obtain_api_token(self):
+        """Verify that invalid credentials cannot obtain an API token."""
         response = self.client.post(
             "/api/token/",
             {
@@ -85,6 +89,7 @@ class NewsAPITests(TestCase):
         )
 
     def test_reader_can_retrieve_approved_article(self):
+        """Verify that a reader can retrieve an approved article."""
         self.client.force_authenticate(user=self.reader)
 
         response = self.client.get(
@@ -100,6 +105,7 @@ class NewsAPITests(TestCase):
             self.approved_article.id,
         )
     def test_reader_only_sees_approved_articles(self):
+        """Verify that readers only see approved articles."""
         self.client.force_authenticate(user=self.reader)
 
         response = self.client.get("/api/articles/")
@@ -112,6 +118,7 @@ class NewsAPITests(TestCase):
         )
 
     def test_reader_cannot_create_article(self):
+        """Verify that readers cannot create articles through the API."""
         self.client.force_authenticate(user=self.reader)
 
         response = self.client.post(
@@ -128,6 +135,7 @@ class NewsAPITests(TestCase):
         )
 
     def test_journalist_can_create_article(self):
+        """Verify that journalists can create articles through the API."""
         self.client.force_authenticate(user=self.journalist)
 
         response = self.client.post(
@@ -146,6 +154,7 @@ class NewsAPITests(TestCase):
         self.assertFalse(response.data["approved"])
 
     def test_reader_only_receives_subscribed_articles(self):
+        """Verify that readers receive articles from subscribed journalists."""
         self.reader.journalist_subscriptions.add(self.journalist)
 
         self.client.force_authenticate(user=self.reader)
@@ -167,6 +176,7 @@ class NewsAPITests(TestCase):
         )
 
     def test_journalist_cannot_edit_another_journalists_article(self):
+        """Verify that journalists cannot edit another journalist's article."""
         self.client.force_authenticate(user=self.other_journalist)
 
         response = self.client.put(
@@ -190,6 +200,7 @@ class NewsAPITests(TestCase):
         mock_send_mail,
         mock_requests_post,
     ):
+        """Verify that article approval triggers email and webhook notifications."""
         self.reader.journalist_subscriptions.add(self.journalist)
 
         token = Token.objects.create(user=self.editor)
@@ -229,6 +240,7 @@ class NewsAPITests(TestCase):
         mock_send_mail,
         mock_requests_post,
     ):
+        """Verify that website approval triggers email and webhook notifications."""
         self.reader.journalist_subscriptions.add(self.journalist)
 
         self.assertTrue(
@@ -263,6 +275,7 @@ class NewsAPITests(TestCase):
 
 
     def test_webhook_rejects_unapproved_article(self):
+        """Verify that the webhook rejects articles awaiting approval."""
         self.client.force_authenticate(user=self.editor)
 
         response = self.client.post(
@@ -277,6 +290,7 @@ class NewsAPITests(TestCase):
         )
 
     def test_editor_can_delete_article(self):
+        """Verify that editors can delete articles."""
         self.client.force_authenticate(user=self.editor)
 
         response = self.client.delete(
@@ -295,6 +309,7 @@ class NewsAPITests(TestCase):
 
 
     def test_journalist_can_create_newsletter(self):
+        """Verify that journalists can create newsletters."""
         self.client.force_authenticate(user=self.journalist)
         response = self.client.post(
             "/api/newsletters/",
@@ -309,6 +324,7 @@ class NewsAPITests(TestCase):
         self.assertEqual(response.data["author"], self.journalist.id)
 
     def test_editor_can_create_newsletter(self):
+        """Verify that editors can create newsletters."""
         self.client.force_authenticate(user=self.editor)
         response = self.client.post(
             "/api/newsletters/",
@@ -323,6 +339,7 @@ class NewsAPITests(TestCase):
         self.assertEqual(response.data["author"], self.editor.id)
 
     def test_reader_cannot_create_newsletter(self):
+        """Verify that readers cannot create newsletters."""
         self.client.force_authenticate(user=self.reader)
         response = self.client.post(
             "/api/newsletters/",
@@ -335,6 +352,7 @@ class NewsAPITests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_reader_can_view_newsletters(self):
+        """Verify that readers can view newsletters."""
         newsletter = Newsletter.objects.create(
             title="Public Newsletter",
             description="A newsletter for readers.",
@@ -347,6 +365,7 @@ class NewsAPITests(TestCase):
         self.assertEqual(response.data[0]["id"], newsletter.id)
 
     def test_journalist_cannot_edit_another_journalists_newsletter(self):
+        """Verify that journalists cannot edit another journalist's newsletter."""
         newsletter = Newsletter.objects.create(
             title="Another Journalist's Newsletter",
             description="Owned by another journalist.",
@@ -364,6 +383,7 @@ class NewsAPITests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_editor_can_edit_another_journalists_newsletter(self):
+        """Verify that editors can edit another journalist's newsletter."""
         newsletter = Newsletter.objects.create(
             title="Journalist Newsletter",
             description="Original description.",
@@ -380,6 +400,7 @@ class NewsAPITests(TestCase):
         self.assertEqual(newsletter.title, "Editor's Updated Title")
 
     def test_journalist_can_use_associated_publisher(self):
+        """Verify that journalists can use their associated publishers."""
         publisher = Publisher.objects.create(
             name="Associated Publisher",
             description="A publisher associated with the journalist.",
@@ -405,6 +426,7 @@ class NewsAPITests(TestCase):
         self.assertEqual(response.data["publisher"], publisher.id)
 
     def test_journalist_cannot_use_unassociated_publisher(self):
+        """Verify that journalists cannot use unassociated publishers."""
         publisher = Publisher.objects.create(
             name="Unassociated Publisher",
             description="A publisher not associated with the journalist.",
@@ -434,6 +456,7 @@ class NewsAPITests(TestCase):
         )
 
     def test_reader_only_receives_articles_from_subscribed_publishers(self):
+        """Verify that readers only receive articles from subscribed publishers."""
         subscribed_publisher = Publisher.objects.create(
             name="Subscribed Publisher",
             description="A publisher the reader follows.",
@@ -476,6 +499,7 @@ class NewsletterWebsiteDeletionTests(TestCase):
     """Test website newsletter deletion permissions."""
 
     def setUp(self):
+        """Create users and a newsletter for website deletion tests."""
         self.reader = User.objects.create_user(
             username="website_reader",
             password="TestPassword123",
@@ -512,6 +536,7 @@ class NewsletterWebsiteDeletionTests(TestCase):
         )
 
     def test_journalist_can_delete_own_newsletter(self):
+        """Verify that journalists can delete their own newsletters."""
         self.client.login(
             username="website_journalist",
             password="TestPassword123",
@@ -530,6 +555,7 @@ class NewsletterWebsiteDeletionTests(TestCase):
         )
 
     def test_journalist_cannot_delete_another_journalists_newsletter(self):
+        """Verify that journalists cannot delete another journalist's newsletter."""
         self.client.login(
             username="other_website_journalist",
             password="TestPassword123",
@@ -545,6 +571,7 @@ class NewsletterWebsiteDeletionTests(TestCase):
         )
 
     def test_editor_can_delete_another_journalists_newsletter(self):
+        """Verify that editors can delete another journalist's newsletter."""
         self.client.login(
             username="website_editor",
             password="TestPassword123",
@@ -563,6 +590,7 @@ class NewsletterWebsiteDeletionTests(TestCase):
         )
 
     def test_reader_cannot_delete_newsletter(self):
+        """Verify that readers cannot delete newsletters."""
         self.client.login(
             username="website_reader",
             password="TestPassword123",
@@ -578,6 +606,7 @@ class NewsletterWebsiteDeletionTests(TestCase):
         )
 
     def test_get_request_displays_confirmation_without_deleting(self):
+        """Verify that GET displays confirmation without deleting the newsletter."""
         self.client.login(
             username="website_journalist",
             password="TestPassword123",

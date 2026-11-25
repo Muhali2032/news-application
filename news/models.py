@@ -1,4 +1,4 @@
-
+"""Define users, publishers, articles and newsletters."""
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -8,6 +8,7 @@ class User(AbstractUser):
     """Custom user model supporting readers, editors and journalists."""
 
     class Role(models.TextChoices):
+        """Define the available user roles."""
         READER = "READER", "Reader"
         EDITOR = "EDITOR", "Editor"
         JOURNALIST = "JOURNALIST", "Journalist"
@@ -32,6 +33,7 @@ class User(AbstractUser):
     )
 
     def __str__(self):
+        """Return the username and displayed user role."""
         return f"{self.username} ({self.get_role_display()})"
 
 
@@ -54,6 +56,7 @@ class Publisher(models.Model):
     )
 
     def __str__(self):
+        """Return the publisher's name."""
         return self.name
 
 
@@ -81,12 +84,14 @@ class Article(models.Model):
     approved = models.BooleanField(default=False)
 
     def clean(self):
+        """Validate that the article author has the journalist role."""
         if self.author.role != User.Role.JOURNALIST:
             raise ValidationError(
                 "An article author must be a journalist."
             )
 
     def __str__(self):
+        """Return the article title."""
         return self.title
 
 
@@ -111,6 +116,7 @@ class Newsletter(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def clean(self):
+        """Validate that the newsletter author is a journalist or editor."""
         if self.author.role not in [
             User.Role.JOURNALIST,
             User.Role.EDITOR
@@ -120,6 +126,7 @@ class Newsletter(models.Model):
             )
 
     def __str__(self):
+        """Return the newsletter title."""
         return self.title
 
     

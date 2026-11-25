@@ -1,0 +1,1 @@
+"""Initialise the news application package."""

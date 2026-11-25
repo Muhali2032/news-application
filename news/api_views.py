@@ -1,3 +1,4 @@
+"""Provide API views for articles, newsletters and approval webhooks."""
 import requests
 from .services import notify_article_approved
 from django.conf import settings
@@ -27,17 +28,20 @@ class ArticleListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = ArticleSerializer
 
     def get_queryset(self):
+        """Return approved articles ordered from newest to oldest."""
         return Article.objects.filter(
             approved=True
         ).select_related("author", "publisher").order_by("-created_at")
 
     def get_permissions(self):
+        """Allow journalists to create articles and authenticated users to list them."""
         if self.request.method == "POST":
             return [IsJournalist()]
 
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):
+        """Save the new article with the authenticated user as its author."""
         serializer.save(author=self.request.user)
 
 
@@ -48,6 +52,7 @@ class SubscribedArticlesAPIView(generics.ListAPIView):
     permission_classes = [IsAuthenticated, IsReader]
 
     def get_queryset(self):
+        """Return approved articles from the reader's subscriptions."""
         reader = self.request.user
 
         return Article.objects.filter(
@@ -68,12 +73,14 @@ class ArticleDetailAPIView(
     serializer_class = ArticleSerializer
 
     def get_permissions(self):
+        """Apply permissions according to the requested HTTP method."""
         if self.request.method in ["GET", "HEAD", "OPTIONS"]:
             return [IsAuthenticated()]
 
         return [IsOwnerOrEditor()]
 
     def get_queryset(self):
+        """Return articles the current user is permitted to access."""
         user = self.request.user
 
         if not user.is_authenticated:
@@ -98,6 +105,7 @@ class ArticleApprovalAPIView(APIView):
     permission_classes = [IsEditor]
 
     def post(self, request, pk):
+        """Approve an article and notify its subscribers."""
         article = get_object_or_404(Article, pk=pk)
 
         if article.approved:
@@ -130,6 +138,7 @@ class ApprovedArticleWebhookAPIView(APIView):
     permission_classes = [IsEditor]
 
     def post(self, request):
+        """Confirm receipt of an approved article webhook."""
         article_id = request.data.get("article_id")
 
         if not article_id:
@@ -164,6 +173,7 @@ class NewsletterListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = NewsletterSerializer
 
     def get_queryset(self):
+        """Return newsletters ordered from newest to oldest."""
         return Newsletter.objects.select_related(
             "author"
         ).prefetch_related(
@@ -171,11 +181,13 @@ class NewsletterListCreateAPIView(generics.ListCreateAPIView):
         ).order_by("-created_at")
 
     def get_permissions(self):
+        """Allow editors and journalists to create newsletters."""
         if self.request.method == "POST":
             return [IsEditorOrJournalist()]
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):
+        """Save the newsletter with the authenticated user as its author."""
         serializer.save(author=self.request.user)
 
 
@@ -185,11 +197,13 @@ class NewsletterDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = NewsletterSerializer
 
     def get_permissions(self):
+        """Apply permissions according to the requested HTTP method."""
         if self.request.method in ["GET", "HEAD", "OPTIONS"]:
             return [IsAuthenticated()]
         return [IsOwnerOrEditor()]
 
     def get_queryset(self):
+        """Return newsletters the current user is permitted to access."""
         user = self.request.user
 
         if not user.is_authenticated:

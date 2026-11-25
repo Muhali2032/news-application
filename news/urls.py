@@ -1,3 +1,4 @@
+"""Define URL routes for the news application website."""
 from django.urls import path
 
 from . import views

@@ -1,4 +1,7 @@
+"""Configure Django admin for the news application."""
+
 from django.contrib import admin
+
 from django.contrib.auth.admin import UserAdmin
 
 from .models import User, Publisher, Article, Newsletter

@@ -1,4 +1,4 @@
-
+"""Provide notification services for approved news articles."""
 import requests
 
 from django.conf import settings

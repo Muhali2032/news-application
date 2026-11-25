@@ -1,3 +1,4 @@
+"""Define URL routes for the news application API."""
 from django.urls import path
 from rest_framework.authtoken.views import obtain_auth_token
 
