@@ -186,7 +186,7 @@ Journalists and Editors can create newsletters containing selected articles. The
 MariaDB stores the application's users, publishers, articles and newsletters. Django ORM manages database relationships and migrations.
 
 
-## 7. Functional Requirements
+## 6. Functional Requirements
 
 The News Application must provide the following functionality:
 
@@ -203,7 +203,7 @@ The News Application must provide the following functionality:
 11. The system must notify relevant subscribers when an article is approved.
 12. The system must record and report the result of the approval webhook request.
 
-## 8. Non-Functional Requirements
+## 7. Non-Functional Requirements
 
 The application must also meet the following quality requirements:
 
@@ -216,7 +216,7 @@ The application must also meet the following quality requirements:
 - **Portability:** The application must support deployment using the documented Python, Django and MariaDB configuration.
 - **Testability:** Automated tests must verify important application functions and access restrictions.
 
-## 9. User Interface and User Experience Design
+## 8. User Interface and User Experience Design
 
 The application provides different functionality according to the user's role.
 
@@ -236,7 +236,7 @@ The interface uses Django templates and Bootstrap to provide consistent page lay
 
 Role-based access ensures that users are only permitted to perform operations appropriate to their responsibilities.
 
-## 10. Database Design and Normalisation
+## 9. Database Design and Normalisation
 
 The application uses Django ORM models and MariaDB to store information.
 
@@ -262,6 +262,6 @@ The design reduces unnecessary duplication by storing each main entity separatel
 
 The use of Django ORM relationships supports referential integrity and allows the database structure to be maintained through migrations.
 
-## 11. Conclusion
+## 10. Conclusion
 
 The system design provides a foundation for the News Application. It defines the user roles, application workflows, database relationships and system requirements. These design elements guide the implementation of the application and support its maintainability and functionality.
