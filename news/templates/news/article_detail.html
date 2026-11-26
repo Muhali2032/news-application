@@ -24,7 +24,24 @@
         <div class="fs-5">
             {{ article.content|linebreaks }}
         </div>
-
+        {% if user.is_authenticated %}
+            {% if user.role == "EDITOR" or user == article.author %}
+                <div class="mt-4">
+                    <a
+                        href="{% url 'article_update' article.pk %}"
+                        class="btn btn-outline-primary"
+                    >
+                        Edit Article
+                    </a>
+                    <a
+                        href="{% url 'article_delete' article.pk %}"
+                        class="btn btn-outline-danger"
+                    >
+                        Delete Article
+                    </a>
+                </div>
+            {% endif %}
+        {% endif %}
         <a href="{% url 'article_list' %}" class="btn btn-outline-dark mt-3">
             Back to Articles
         </a>

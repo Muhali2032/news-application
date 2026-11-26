@@ -1,8 +1,5 @@
 """Provide API views for articles, newsletters and approval webhooks."""
-import requests
 from .services import notify_article_approved
-from django.conf import settings
-from django.core.mail import send_mail
 from django.db.models import Q
 from django.shortcuts import get_object_or_404
 
@@ -34,7 +31,8 @@ class ArticleListCreateAPIView(generics.ListCreateAPIView):
         ).select_related("author", "publisher").order_by("-created_at")
 
     def get_permissions(self):
-        """Allow journalists to create articles and authenticated users to list them."""
+        """Allow journalists to create articles and authenticated users
+        to list them."""
         if self.request.method == "POST":
             return [IsJournalist()]
 
@@ -99,6 +97,7 @@ class ArticleDetailAPIView(
 
         return Article.objects.filter(approved=True)
 
+
 class ArticleApprovalAPIView(APIView):
     """Allow editors to approve articles and notify subscribers."""
 
@@ -132,6 +131,7 @@ class ArticleApprovalAPIView(APIView):
             status=200,
         )
 
+
 class ApprovedArticleWebhookAPIView(APIView):
     """Receive confirmation of an approved article."""
 
@@ -164,7 +164,6 @@ class ApprovedArticleWebhookAPIView(APIView):
             },
             status=200,
         )
-
 
 
 class NewsletterListCreateAPIView(generics.ListCreateAPIView):

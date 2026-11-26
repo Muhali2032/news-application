@@ -6,13 +6,21 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import render, get_object_or_404, redirect
 
-from .models import Article, Newsletter
-from .forms import ArticleForm, NewsletterForm, UserRegistrationForm
+from django.db.models import Q
+
+from .models import Article, Newsletter, User
+from .forms import (
+    ArticleForm,
+    NewsletterForm,
+    ReaderSubscriptionForm,
+    UserRegistrationForm,
+)
 
 
 def has_role(user, *roles):
     """Check whether an authenticated user has one of the specified roles."""
     return user.is_authenticated and user.role in roles
+
 
 def register(request):
     """Register a new reader account."""
@@ -34,11 +42,10 @@ def register(request):
         form = UserRegistrationForm()
 
     return render(
-    request,
-    "registration/registration.html",
-    {"form": form}
-)
-
+        request,
+        "registration/registration.html",
+        {"form": form}
+        )
 
 
 def article_list(request):
@@ -59,6 +66,7 @@ def article_detail(request, pk):
     return render(request, "news/article_detail.html", {
         "article": article
     })
+
 
 @login_required
 def article_create(request):
@@ -100,10 +108,10 @@ def article_update(request, pk):
         raise PermissionDenied
 
     form = ArticleForm(
-    request.POST or None,
-    instance=article,
-    user=request.user,
-)
+        request.POST or None,
+        instance=article,
+        user=request.user,
+        )
 
     if form.is_valid():
         updated_article = form.save(commit=False)
@@ -136,7 +144,6 @@ def article_delete(request, pk):
     return render(request, "news/article_confirm_delete.html", {
         "article": article
     })
-
 
 
 @login_required
@@ -247,6 +254,8 @@ def newsletter_update(request, pk):
     return render(request, "news/newsletter_form.html", {
         "form": form
     })
+
+
 @login_required
 def newsletter_delete(request, pk):
     """Allow authorised users to delete newsletters."""
@@ -282,6 +291,8 @@ def newsletter_detail(request, pk):
     return render(request, "news/newsletter_detail.html", {
         "newsletter": newsletter
     })
+
+
 @login_required
 def pending_articles(request):
     """Display pending articles to authorised editors."""
@@ -295,3 +306,56 @@ def pending_articles(request):
     return render(request, "news/pending_articles.html", {
         "articles": articles
     })
+
+
+@login_required
+def manage_subscriptions(request):
+    """Allow readers to manage journalist and publisher subscriptions."""
+    if not has_role(request.user, User.Role.READER):
+        raise PermissionDenied
+
+    form = ReaderSubscriptionForm(
+        request.POST or None,
+        user=request.user,
+    )
+
+    if request.method == "POST" and form.is_valid():
+        form.save(request.user)
+        messages.success(
+            request,
+            "Your subscriptions have been updated.",
+        )
+        return redirect("manage_subscriptions")
+
+    return render(
+        request,
+        "news/manage_subscriptions.html",
+        {"form": form},
+    )
+
+
+@login_required
+def subscribed_articles(request):
+    """Display approved articles from the reader's subscriptions."""
+    if not has_role(request.user, User.Role.READER):
+        raise PermissionDenied
+
+    articles = Article.objects.filter(
+        approved=True
+    ).filter(
+        Q(
+            publisher__in=request.user.publisher_subscriptions.all()
+        )
+        | Q(
+            author__in=request.user.journalist_subscriptions.all()
+        )
+    ).select_related(
+        "author",
+        "publisher",
+    ).distinct().order_by("-created_at")
+
+    return render(
+        request,
+        "news/subscribed_articles.html",
+        {"articles": articles},
+    )

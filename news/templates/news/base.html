@@ -25,6 +25,17 @@
             </a>
 
             {% if user.is_authenticated %}
+                            {% if user.role == "READER" %}
+                    <a class="nav-link"
+                       href="{% url 'manage_subscriptions' %}">
+                        Manage Subscriptions
+                    </a>
+
+                    <a class="nav-link"
+                       href="{% url 'subscribed_articles' %}">
+                        My Subscribed Articles
+                    </a>
+                {% endif %}
                 {% if user.role == "JOURNALIST" %}
                     <a class="nav-link" href="{% url 'article_create' %}">
                         Publish Article

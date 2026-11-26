@@ -54,7 +54,8 @@ class IsEditorOrJournalist(BasePermission):
 
 class IsOwnerOrEditor(BasePermission):
 
-    """Allow journalists to manage their own articles and editors to manage all."""
+    """Allow journalists to manage their own articles and editors
+    to manage all."""
 
     def has_permission(self, request, view):
         """Check whether the user is an authenticated editor or journalist."""

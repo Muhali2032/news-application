@@ -125,4 +125,3 @@ class NewsletterSerializer(serializers.ModelSerializer):
             )
 
         return data
-

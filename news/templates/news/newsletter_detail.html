@@ -41,7 +41,24 @@
             {% endfor %}
 
         </div>
-
+        {% if user.is_authenticated %}
+            {% if user.role == "EDITOR" or user == newsletter.author %}
+                <div class="mt-4">
+                    <a
+                        href="{% url 'newsletter_update' newsletter.pk %}"
+                        class="btn btn-outline-primary"
+                    >
+                        Edit Newsletter
+                    </a>
+                    <a
+                        href="{% url 'newsletter_delete' newsletter.pk %}"
+                        class="btn btn-outline-danger"
+                    >
+                        Delete Newsletter
+                    </a>
+                </div>
+            {% endif %}
+        {% endif %}
         <a
             href="{% url 'newsletter_list' %}"
             class="btn btn-outline-dark mt-4"

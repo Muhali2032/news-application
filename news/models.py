@@ -128,5 +128,3 @@ class Newsletter(models.Model):
     def __str__(self):
         """Return the newsletter title."""
         return self.title
-
-    

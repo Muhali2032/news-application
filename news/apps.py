@@ -12,5 +12,4 @@ class NewsConfig(AppConfig):
 
     def ready(self):
         """Load the application's signal handlers."""
-
-        import news.signals
+        import news.signals  # noqa: F401

@@ -32,8 +32,22 @@
                     </p>
 
                     <a
-                        href="{% url 'article_detail' article.pk %}"
-                        class="btn btn-dark"
+                                           {% if user.is_authenticated %}
+                        {% if user.role == "EDITOR" or user == article.author %}
+                            <a
+                                href="{% url 'article_update' article.pk %}"
+                                class="btn btn-outline-primary btn-sm"
+                            >
+                                Edit
+                            </a>
+                            <a
+                                href="{% url 'article_delete' article.pk %}"
+                                class="btn btn-outline-danger btn-sm"
+                            >
+                                Delete
+                            </a>
+                        {% endif %}
+                    {% endif %}
                     >
                         Read Article
                     </a>

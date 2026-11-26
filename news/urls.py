@@ -13,6 +13,16 @@ urlpatterns = [
         name="pending_articles",
     ),
     path(
+        "subscriptions/",
+        views.manage_subscriptions,
+        name="manage_subscriptions",
+    ),
+    path(
+        "articles/subscribed/",
+        views.subscribed_articles,
+        name="subscribed_articles",
+    ),
+    path(
         "articles/<int:pk>/",
         views.article_detail,
         name="article_detail",
@@ -58,8 +68,8 @@ urlpatterns = [
         name="newsletter_update",
     ),
     path(
-    "newsletters/<int:pk>/delete/",
-    views.newsletter_delete,
-    name="newsletter_delete",
+        "newsletters/<int:pk>/delete/",
+        views.newsletter_delete,
+        name="newsletter_delete",
     ),
 ]
