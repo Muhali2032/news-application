@@ -32,7 +32,13 @@
                     </p>
 
                     <a
-                                           {% if user.is_authenticated %}
+                        href="{% url 'article_detail' article.pk %}"
+                        class="btn btn-dark btn-sm"
+                    >
+                        Read Article
+                    </a>
+
+                    {% if user.is_authenticated %}
                         {% if user.role == "EDITOR" or user == article.author %}
                             <a
                                 href="{% url 'article_update' article.pk %}"
@@ -48,9 +54,6 @@
                             </a>
                         {% endif %}
                     {% endif %}
-                    >
-                        Read Article
-                    </a>
                 </div>
 
                 <div class="card-footer text-muted small">

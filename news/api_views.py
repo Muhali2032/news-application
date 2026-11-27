@@ -135,7 +135,7 @@ class ArticleApprovalAPIView(APIView):
 class ApprovedArticleWebhookAPIView(APIView):
     """Receive confirmation of an approved article."""
 
-    permission_classes = [IsEditor]
+    permission_classes = [IsEditorOrJournalist]
 
     def post(self, request):
         """Confirm receipt of an approved article webhook."""
@@ -148,6 +148,16 @@ class ApprovedArticleWebhookAPIView(APIView):
             )
 
         article = get_object_or_404(Article, pk=article_id)
+
+        if request.user.role == User.Role.JOURNALIST:
+            if (
+                article.author_id != request.user.id
+                or article.publisher_id is not None
+            ):
+                return Response(
+                    {"detail": "You cannot confirm this article."},
+                    status=403,
+                )
 
         if not article.approved:
             return Response(

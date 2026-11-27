@@ -23,6 +23,21 @@ urlpatterns = [
         name="subscribed_articles",
     ),
     path(
+        "publishers/",
+        views.publisher_list,
+        name="publisher_list",
+    ),
+    path(
+        "publishers/create/",
+        views.publisher_create,
+        name="publisher_create",
+    ),
+    path(
+        "publishers/<int:pk>/edit/",
+        views.publisher_update,
+        name="publisher_update",
+    ),
+    path(
         "articles/<int:pk>/",
         views.article_detail,
         name="article_detail",

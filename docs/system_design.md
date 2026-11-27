@@ -12,6 +12,8 @@ The diagrams represent the application's three user roles, its main workflows an
 The use-case diagram shows the main activities available to Readers, Journalists and Editors.
 
 ```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#111827", "primaryBorderColor": "#374151", "lineColor": "#374151", "secondaryColor": "#f3f4f6", "tertiaryColor": "#ffffff", "actorBkg": "#ffffff", "actorTextColor": "#111827", "actorBorder": "#374151", "signalColor": "#111827", "signalTextColor": "#111827", "noteBkgColor": "#fff7cc", "noteTextColor": "#111827", "noteBorderColor": "#9ca3af"}}}%%
+
 flowchart LR
 Reader([Reader])
 Journalist([Journalist])
@@ -30,6 +32,7 @@ subgraph NewsApplication["News Application"]
     ApproveArticle([Approve article])
     ManageArticles([Edit or delete articles])
     ManageNewsletters([Manage newsletters])
+    ManagePublishers([Manage publishers])
 end
 
 Reader --> ViewArticles
@@ -51,17 +54,28 @@ Editor --> ApproveArticle
 Editor --> ManageArticles
 Editor --> CreateNewsletter
 Editor --> ManageNewsletters
+Editor --> ManagePublishers
+
+classDef actor fill:#ffffff,stroke:#374151,color:#111827,stroke-width:2px
+classDef usecase fill:#ffffff,stroke:#374151,color:#111827,stroke-width:1.5px
+class Reader,Journalist,Editor actor
+class ViewArticles,ViewNewsletters,ViewSubscriptions,CreateArticle,EditOwnArticle,DeleteOwnArticle,CreateNewsletter,ManageOwnNewsletter,ReviewArticles,ApproveArticle,ManageArticles,ManageNewsletters,ManagePublishers usecase
+style NewsApplication fill:#f3f4f6,stroke:#374151,color:#111827,stroke-width:2px
+linkStyle default stroke:#374151,stroke-width:1.5px
+
 ```
 
 ## 3. Article Approval Sequence Diagram
 
 This sequence diagram illustrates how an editor approves an article and how the application processes subscriber notifications and the webhook.
 ```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#111827", "primaryBorderColor": "#374151", "lineColor": "#374151", "secondaryColor": "#f3f4f6", "tertiaryColor": "#ffffff", "actorBkg": "#ffffff", "actorTextColor": "#111827", "actorBorder": "#374151", "signalColor": "#111827", "signalTextColor": "#111827", "noteBkgColor": "#fff7cc", "noteTextColor": "#111827", "noteBorderColor": "#9ca3af", "fontSize": "22px"}}}%%
+
 sequenceDiagram
 autonumber
 actor Editor
 participant API as Django API
-participant DB as MariaDB
+participant DB as MySQL 9.3.0
 participant Email as Django Console Email Backend
 participant Webhook as Local Approved Article API
 
@@ -115,6 +129,8 @@ end
 The class diagram shows the main models and their relationships.
 
 ```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#111827", "primaryBorderColor": "#374151", "lineColor": "#374151", "secondaryColor": "#f3f4f6", "tertiaryColor": "#ffffff", "actorBkg": "#ffffff", "actorTextColor": "#111827", "actorBorder": "#374151", "signalColor": "#111827", "signalTextColor": "#111827", "noteBkgColor": "#fff7cc", "noteTextColor": "#111827", "noteBorderColor": "#9ca3af", "fontSize": "17px"}}}%%
+
 classDiagram
 
 class User {
@@ -171,7 +187,7 @@ The application uses a custom Django user model with three roles: Reader, Editor
 
 ### Article management
 
-Journalists create articles. Articles are associated with a journalist and may optionally be linked to a publisher. Articles are initially unapproved and require editorial approval before appearing in the approved article listing.
+Journalists create articles. Articles are associated with a journalist and may optionally be linked to a publisher. Independent articles are published immediately, while publisher-associated articles remain pending until an Editor approves them.
 
 ### Subscriptions
 
@@ -183,7 +199,7 @@ Journalists and Editors can create newsletters containing selected articles. The
 
 ### Database
 
-MariaDB stores the application's users, publishers, articles and newsletters. Django ORM manages database relationships and migrations.
+MySQL 9.3.0 stores the application's users, publishers, articles and newsletters. Django ORM manages database relationships and migrations.
 
 
 ## 6. Functional Requirements
@@ -193,7 +209,7 @@ The News Application must provide the following functionality:
 1. Users must be able to register and log in.
 2. The system must distinguish between Readers, Editors and Journalists.
 3. Journalists must be able to create and manage their own articles.
-4. Articles must require editorial approval before publication.
+4. Independent journalist articles may be published immediately, while publisher-associated articles must receive editorial approval.
 5. Editors must be able to review, approve, update and delete articles.
 6. Readers must be able to view approved articles and newsletters.
 7. Readers must be able to subscribe to publishers and journalists.
@@ -202,6 +218,8 @@ The News Application must provide the following functionality:
 10. The REST API must support authenticated article and newsletter operations.
 11. The system must notify relevant subscribers when an article is approved.
 12. The system must record and report the result of the approval webhook request.
+
+13. Editors must be able to create and manage publishers and assign Editors and Journalists.
 
 ## 7. Non-Functional Requirements
 
@@ -213,7 +231,7 @@ The application must also meet the following quality requirements:
 - **Reliability:** The application must handle notification failures without preventing an article from remaining approved.
 - **Usability:** The interface must provide clear navigation and understandable actions for each user role.
 - **Performance:** Database queries should retrieve related information efficiently where appropriate.
-- **Portability:** The application must support deployment using the documented Python, Django and MariaDB configuration.
+- **Portability:** The application must support deployment using the documented Python, Django and MySQL 9.3.0 configuration.
 - **Testability:** Automated tests must verify important application functions and access restrictions.
 
 ## 8. User Interface and User Experience Design
@@ -226,11 +244,11 @@ Readers can browse approved articles, view newsletters and access articles from 
 
 **Journalist interface**
 
-Journalists can create articles, manage their own content and create or manage newsletters. Articles remain pending until an Editor approves them.
+Journalists can create and manage their own articles and newsletters. They can publish independent articles immediately or submit articles associated with an assigned Publisher for editorial approval.
 
 **Editor interface**
 
-Editors can review pending articles, approve articles and manage articles and newsletters.
+Editors can create and manage publishers, assign Editors and Journalists, review and approve publisher-associated articles, and manage articles and newsletters.
 
 The interface uses Django templates and Bootstrap to provide consistent page layouts, navigation and forms.
 
@@ -238,7 +256,7 @@ Role-based access ensures that users are only permitted to perform operations ap
 
 ## 9. Database Design and Normalisation
 
-The application uses Django ORM models and MariaDB to store information.
+The application uses Django ORM models and MySQL 9.3.0 to store information.
 
 The main entities are User, Publisher, Article and Newsletter.
 

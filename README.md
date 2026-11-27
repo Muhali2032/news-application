@@ -6,21 +6,21 @@ The News Application is a Django-based web application that allows readers to ac
 
 The application provides article management, editorial approval, publisher and journalist subscriptions, newsletters and a REST API.
 
-The project uses Django, Django REST Framework and MariaDB.
+The project uses Django, Django REST Framework and MySQL.
 
 ## 2. User Roles
 
 | Role | Responsibilities |
 |---|---|
 | Reader | View approved articles and newsletters and access subscribed content through the API. |
-| Journalist | Create and manage articles and create or manage their own newsletters. |
-| Editor | Review and approve articles, manage articles and create or manage newsletters. |
+| Journalist | Create and manage independent articles, submit publisher articles for editorial approval, and create or manage their own newsletters. |
+| Editor | Create and manage publishers, assign editors and journalists, review publisher articles, manage articles and create or manage newsletters. |
 
 ## 3. Main Features
 
 - User authentication and role-based access.
 - Article creation, viewing, editing and deletion.
-- Editorial approval before articles are published.
+- Independent journalist articles can be published immediately; publisher-associated articles require editorial approval.
 - Support for independent journalists and publisher-associated articles.
 - Publisher and journalist subscription relationships.
 - Newsletter creation and management.
@@ -28,6 +28,18 @@ The project uses Django, Django REST Framework and MariaDB.
 - Local API webhook integration that receives a request when an article is approved.
 - REST API with token authentication.
 - Automated tests for important application workflows.
+
+### Publisher management and article publishing
+
+1. Register an account and select the **Editor** role.
+2. Log in as the Editor and open **Manage Publishers** in the navigation bar.
+3. Select **Create Publisher**, enter the publisher name and description, and assign registered Editors and Journalists where applicable.
+4. Save the Publisher. The Editor who creates it is automatically assigned to manage it.
+5. The Editor can return to **Manage Publishers** to update the Publisher and its assigned members.
+6. A Journalist can create an article and leave the Publisher field blank to publish it independently and immediately.
+7. To submit an article for a publication, the Journalist selects an assigned Publisher. The article then remains pending until an Editor reviews and approves it.
+
+Only Editors can create and manage Publishers. Journalists can submit articles only to Publishers to which they have been assigned.
 
 ## 4. Database Design
 
@@ -38,7 +50,7 @@ The application uses four main models:
 - **Article:** Stores article content, author, optional publisher, creation date and approval status.
 - **Newsletter:** Stores newsletter information and links curated articles to the newsletter.
 
-MariaDB is used as the configured database.
+MySQL is used as the configured database.
 
 ## 5. Application Structure
 
@@ -67,7 +79,6 @@ news_application_project/
 │   ├── asgi.py
 │   └── wsgi.py
 ├── docs/
-├── screenshots/
 ├── manage.py
 ├── requirements.txt
 └── README.md
@@ -101,9 +112,9 @@ API access is controlled through token authentication and role-based permissions
 - Python 3
 - Django
 - Django REST Framework
-- MySQL or MariaDB
+- MySQL
 - Git
-- A running MySQL or MariaDB server
+- A running MySQL server
 
 ### Step 1: Clone the Repository
 
@@ -153,6 +164,8 @@ cp .env.example .env
 Open `.env` and replace the example values with your own credentials:
 
 - `DJANGO_SECRET_KEY`: A securely generated Django secret key.
+- `DB_NAME`: The database name (`news_application` by default).
+- `DB_USER`: The database username (`news_user` by default).
 - `DB_PASSWORD`: The password you choose for the `news_user` database account.
 
 Generate a Django secret key using:
@@ -167,7 +180,7 @@ Do not commit `.env` to GitHub because it contains sensitive information. The `.
 
 ### Step 5: Create the Database and Database User
 
-Make sure your MySQL or MariaDB server is running.
+Make sure your MySQL server is running.
 
 Log in to the database as the administrator:
 
@@ -175,7 +188,7 @@ Log in to the database as the administrator:
 mysql -u root -p
 ```
 
-Enter your MySQL or MariaDB root password when prompted.
+Enter your MySQL root password when prompted.
 
 For a fresh installation, run the following SQL commands to create the application database and user. If the database or user already exists, do not recreate it; verify the existing configuration and permissions instead.
 
@@ -202,7 +215,7 @@ The database settings in `news_project/settings.py` are configured as follows:
 - Host: `127.0.0.1`
 - Port: `3306`
 
-If you use a different database name or username, update the corresponding settings in `news_project/settings.py` to match.
+If you use a different database name or username, update `DB_NAME` or `DB_USER` in your `.env` file to match.
 
 Exit the database console:
 

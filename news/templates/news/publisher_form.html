@@ -1,0 +1,43 @@
+{% extends "news/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ title }}</h2>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            {{ form.name.label_tag }}
+            {{ form.name }}
+            {{ form.name.errors }}
+        </div>
+
+        <div class="mb-3">
+            {{ form.description.label_tag }}
+            {{ form.description }}
+            {{ form.description.errors }}
+        </div>
+
+        <div class="mb-3">
+            <h5>Assign Editors</h5>
+            {{ form.editors }}
+            {{ form.editors.errors }}
+        </div>
+
+        <div class="mb-3">
+            <h5>Assign Journalists</h5>
+            {{ form.journalists }}
+            {{ form.journalists.errors }}
+        </div>
+
+        <button type="submit" class="btn btn-dark">
+            Save Publisher
+        </button>
+
+        <a href="{% url 'publisher_list' %}" class="btn btn-outline-secondary">
+            Cancel
+        </a>
+    </form>
+</div>
+{% endblock %}

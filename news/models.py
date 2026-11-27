@@ -7,6 +7,8 @@ from django.db import models
 class User(AbstractUser):
     """Custom user model supporting readers, editors and journalists."""
 
+
+    email = models.EmailField(unique=True)
     class Role(models.TextChoices):
         """Define the available user roles."""
         READER = "READER", "Reader"

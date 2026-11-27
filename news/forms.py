@@ -17,6 +17,19 @@ class UserRegistrationForm(UserCreationForm):
                 "class": "form-control"
             })
 
+    def clean_email(self):
+        """Reject email addresses that are already registered."""
+        email = self.cleaned_data["email"].strip().lower()
+
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError(
+                "This email address is already registered. "
+                "Please use another email address."
+            )
+
+        return email
+
+
     class Meta:
         """Define the user registration model and fields."""
         model = User
@@ -27,6 +40,73 @@ class UserRegistrationForm(UserCreationForm):
             "last_name",
             "role"
         ]
+
+
+class PublisherForm(forms.ModelForm):
+    """Form for creating and managing publishers."""
+
+    editors = forms.ModelMultipleChoiceField(
+        queryset=User.objects.filter(
+            role=User.Role.EDITOR
+        ).order_by("username"),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        label="Editors",
+    )
+
+    journalists = forms.ModelMultipleChoiceField(
+        queryset=User.objects.filter(
+            role=User.Role.JOURNALIST
+        ).order_by("username"),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        label="Journalists",
+    )
+
+    class Meta:
+        """Define the publisher model, fields and widgets."""
+
+        model = Publisher
+        fields = ["name", "description"]
+        widgets = {
+            "name": forms.TextInput(
+                attrs={"class": "form-control"}
+            ),
+            "description": forms.Textarea(
+                attrs={"class": "form-control", "rows": 5}
+            ),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        """Preselect existing publisher members."""
+
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+        if self.instance.pk:
+            self.fields["editors"].initial = (
+                self.instance.editors.all()
+            )
+            self.fields["journalists"].initial = (
+                self.instance.journalists.all()
+            )
+
+    def save(self, commit=True):
+        """Save publisher details and its editor and journalist members."""
+
+        publisher = super().save(commit=commit)
+
+        if commit:
+            editors = self.cleaned_data["editors"]
+            journalists = self.cleaned_data["journalists"]
+
+            if self.user is not None:
+                editors = editors | User.objects.filter(pk=self.user.pk)
+
+            publisher.editors.set(editors)
+            publisher.journalists.set(journalists)
+
+        return publisher
 
 
 class ArticleForm(forms.ModelForm):

@@ -14,7 +14,13 @@
                     Submit or Update Article
                 </h1>
 
-                <form method="post">
+                <div class="alert alert-info">
+    <strong>Publishing options:</strong>
+    Leave Publisher blank to publish your article independently.
+    Select an assigned Publisher to submit it for Editor approval.
+</div>
+
+<form method="post">
                     {% csrf_token %}
 
                     {{ form.as_p }}

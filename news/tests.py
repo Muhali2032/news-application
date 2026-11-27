@@ -26,18 +26,21 @@ class NewsAPITests(TestCase):
 
         self.journalist = User.objects.create_user(
             username="test_journalist",
+            email="test_journalist@example.com",
             password="TestPassword123",
             role=User.Role.JOURNALIST,
         )
 
         self.other_journalist = User.objects.create_user(
             username="other_journalist",
+            email="other_journalist@example.com",
             password="TestPassword123",
             role=User.Role.JOURNALIST,
         )
 
         self.editor = User.objects.create_user(
             username="test_editor",
+            email="test_editor@example.com",
             password="TestPassword123",
             role=User.Role.EDITOR,
         )
@@ -535,6 +538,123 @@ class NewsAPITests(TestCase):
         )
 
 
+class WebsiteArticlePublishingTests(TestCase):
+    """Test independent and publisher-linked website article publishing."""
+
+    def setUp(self):
+        """Create a journalist and an associated publisher."""
+        self.journalist = User.objects.create_user(
+            username="publishing_journalist",
+            email="publishing_journalist@example.com",
+            password="TestPassword123",
+            role=User.Role.JOURNALIST,
+        )
+        self.publisher = Publisher.objects.create(
+            name="Publishing Test Publisher",
+        )
+        self.publisher.journalists.add(self.journalist)
+        self.client.force_login(self.journalist)
+
+    @patch(
+        "news.views.notify_article_approved",
+        return_value={
+            "email_error": None,
+            "webhook_error": None,
+        },
+    )
+    def test_journalist_can_publish_independent_article(
+        self, notify_mock
+    ):
+        """Verify independent articles are published immediately."""
+        response = self.client.post(
+            reverse("article_create"),
+            {
+                "title": "Independent Article",
+                "content": "This article is published independently.",
+                "publisher": "",
+            },
+        )
+
+        self.assertRedirects(response, reverse("article_list"))
+
+        article = Article.objects.get(title="Independent Article")
+        self.assertEqual(article.author, self.journalist)
+        self.assertIsNone(article.publisher)
+        self.assertTrue(article.approved)
+        notify_mock.assert_called_once()
+
+    @patch("news.views.notify_article_approved")
+    def test_publisher_article_waits_for_editor_approval(
+        self, notify_mock
+    ):
+        """Verify publisher articles remain pending for editor approval."""
+        response = self.client.post(
+            reverse("article_create"),
+            {
+                "title": "Publisher Article",
+                "content": "This article requires editor approval.",
+                "publisher": self.publisher.pk,
+            },
+        )
+
+        self.assertRedirects(response, reverse("article_list"))
+
+        article = Article.objects.get(title="Publisher Article")
+        self.assertEqual(article.author, self.journalist)
+        self.assertEqual(article.publisher, self.publisher)
+        self.assertFalse(article.approved)
+        notify_mock.assert_not_called()
+
+
+class PublisherManagementTests(TestCase):
+    """Test publisher creation and role-based access."""
+
+    def setUp(self):
+        """Create an editor and journalist."""
+        self.editor = User.objects.create_user(
+            username="publisher_editor",
+            email="publisher_editor@example.com",
+            password="TestPassword123",
+            role=User.Role.EDITOR,
+        )
+        self.journalist = User.objects.create_user(
+            username="publisher_journalist",
+            email="publisher_journalist@example.com",
+            password="TestPassword123",
+            role=User.Role.JOURNALIST,
+        )
+
+    def test_editor_can_create_publisher_and_assign_journalist(self):
+        """Verify editors can create publishers and assign members."""
+        self.client.force_login(self.editor)
+
+        response = self.client.post(
+            reverse("publisher_create"),
+            {
+                "name": "New Test Publisher",
+                "description": "A publisher created by an editor.",
+                "editors": [],
+                "journalists": [self.journalist.pk],
+            },
+        )
+
+        self.assertRedirects(response, reverse("publisher_list"))
+
+        publisher = Publisher.objects.get(name="New Test Publisher")
+        self.assertTrue(publisher.editors.filter(pk=self.editor.pk).exists())
+        self.assertTrue(
+            publisher.journalists.filter(pk=self.journalist.pk).exists()
+        )
+
+    def test_journalist_cannot_manage_publishers(self):
+        """Verify journalists cannot access publisher management."""
+        self.client.force_login(self.journalist)
+
+        for url_name in ["publisher_list", "publisher_create"]:
+            response = self.client.get(reverse(url_name))
+            self.assertEqual(response.status_code, 403)
+
+
 class WebsiteSubscriptionTests(TestCase):
     """Test website subscription management and access permissions."""
 
@@ -542,24 +662,28 @@ class WebsiteSubscriptionTests(TestCase):
         """Create users and a publisher for website subscription tests."""
         self.reader = User.objects.create_user(
             username="subscription_reader",
+            email="subscription_reader@example.com",
             password="TestPassword123",
             role=User.Role.READER,
         )
 
         self.journalist = User.objects.create_user(
             username="subscription_journalist",
+            email="subscription_journalist@example.com",
             password="TestPassword123",
             role=User.Role.JOURNALIST,
         )
 
         self.other_journalist = User.objects.create_user(
             username="other_subscription_journalist",
+            email="other_subscription_journalist@example.com",
             password="TestPassword123",
             role=User.Role.JOURNALIST,
         )
 
         self.editor = User.objects.create_user(
             username="subscription_editor",
+            email="subscription_editor@example.com",
             password="TestPassword123",
             role=User.Role.EDITOR,
         )
@@ -695,24 +819,28 @@ class NewsletterWebsiteDeletionTests(TestCase):
         """Create users and a newsletter for website deletion tests."""
         self.reader = User.objects.create_user(
             username="website_reader",
+            email="website_reader@example.com",
             password="TestPassword123",
             role=User.Role.READER,
         )
 
         self.journalist = User.objects.create_user(
             username="website_journalist",
+            email="website_journalist@example.com",
             password="TestPassword123",
             role=User.Role.JOURNALIST,
         )
 
         self.other_journalist = User.objects.create_user(
             username="other_website_journalist",
+            email="other_website_journalist@example.com",
             password="TestPassword123",
             role=User.Role.JOURNALIST,
         )
 
         self.editor = User.objects.create_user(
             username="website_editor",
+            email="website_editor@example.com",
             password="TestPassword123",
             role=User.Role.EDITOR,
         )

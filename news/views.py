@@ -8,10 +8,11 @@ from django.shortcuts import render, get_object_or_404, redirect
 
 from django.db.models import Q
 
-from .models import Article, Newsletter, User
+from .models import Article, Newsletter, Publisher, User
 from .forms import (
     ArticleForm,
     NewsletterForm,
+    PublisherForm,
     ReaderSubscriptionForm,
     UserRegistrationForm,
 )
@@ -70,30 +71,53 @@ def article_detail(request, pk):
 
 @login_required
 def article_create(request):
-    """Allow journalists to create and submit articles for approval."""
-    if not has_role(request.user, "JOURNALIST"):
+    """Allow journalists to publish independent articles or submit publisher articles."""
+    if not has_role(request.user, User.Role.JOURNALIST):
         raise PermissionDenied
 
     form = ArticleForm(request.POST or None, user=request.user)
-
-    # Assign the author before Django validates the form.
     form.instance.author = request.user
 
-    if form.is_valid():
+    if request.method == "POST" and form.is_valid():
         article = form.save(commit=False)
         article.author = request.user
+
+        # Independent articles can be published by their journalist.
+        # Publisher articles must remain pending for editor approval.
+        article.approved = article.publisher_id is None
+
         article.full_clean()
         article.save()
 
-        messages.success(
-            request,
-            "Article submitted for approval."
-        )
+        if article.approved:
+            token, created = Token.objects.get_or_create(
+                user=request.user
+            )
+            results = notify_article_approved(article, token.key)
+
+            if results["email_error"] or results["webhook_error"]:
+                messages.warning(
+                    request,
+                    "Your article was published, but one or more notifications failed.",
+                )
+            else:
+                messages.success(
+                    request,
+                    "Your independent article has been published.",
+                )
+        else:
+            messages.success(
+                request,
+                "Your article has been submitted for editor approval.",
+            )
+
         return redirect("article_list")
 
-    return render(request, "news/article_form.html", {
-        "form": form
-    })
+    return render(
+        request,
+        "news/article_form.html",
+        {"form": form},
+    )
 
 
 @login_required
@@ -300,7 +324,8 @@ def pending_articles(request):
         raise PermissionDenied
 
     articles = Article.objects.filter(
-        approved=False
+        approved=False,
+        publisher__isnull=False,
     ).order_by("-created_at")
 
     return render(request, "news/pending_articles.html", {
@@ -331,6 +356,69 @@ def manage_subscriptions(request):
         request,
         "news/manage_subscriptions.html",
         {"form": form},
+    )
+
+
+@login_required
+def publisher_list(request):
+    """Display publishers for editors to manage."""
+    if not has_role(request.user, User.Role.EDITOR):
+        raise PermissionDenied
+
+    publishers = Publisher.objects.prefetch_related(
+        "editors",
+        "journalists",
+    ).order_by("name")
+
+    return render(
+        request,
+        "news/publisher_list.html",
+        {"publishers": publishers},
+    )
+
+
+@login_required
+def publisher_create(request):
+    """Allow editors to create publishers and assign members."""
+    if not has_role(request.user, User.Role.EDITOR):
+        raise PermissionDenied
+
+    form = PublisherForm(request.POST or None, user=request.user)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Publisher created successfully.")
+        return redirect("publisher_list")
+
+    return render(
+        request,
+        "news/publisher_form.html",
+        {"form": form, "title": "Create Publisher"},
+    )
+
+
+@login_required
+def publisher_update(request, pk):
+    """Allow editors to update publishers and manage their members."""
+    if not has_role(request.user, User.Role.EDITOR):
+        raise PermissionDenied
+
+    publisher = get_object_or_404(Publisher, pk=pk)
+    form = PublisherForm(
+        request.POST or None,
+        instance=publisher,
+        user=request.user,
+    )
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Publisher updated successfully.")
+        return redirect("publisher_list")
+
+    return render(
+        request,
+        "news/publisher_form.html",
+        {"form": form, "title": "Edit Publisher"},
     )
 
 

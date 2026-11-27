@@ -25,6 +25,9 @@
             </a>
 
             {% if user.is_authenticated %}
+                <span class="navbar-text text-white me-3">
+                    Logged in: {{ user.username }} | Role: {{ user.get_role_display }}
+                </span>
                             {% if user.role == "READER" %}
                     <a class="nav-link"
                        href="{% url 'manage_subscriptions' %}">
@@ -51,6 +54,9 @@
                 {% if user.role == "EDITOR" %}
                     <a class="nav-link" href="{% url 'pending_articles' %}">
                         Review Articles
+                    </a>
+                    <a class="nav-link" href="{% url 'publisher_list' %}">
+                        Manage Publishers
                     </a>
                 {% endif %}
             <form method="post" action="{% url 'logout' %}">
